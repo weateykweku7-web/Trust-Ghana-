@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trust Ghana - Ghana's Trusted Marketplace</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+    <header>
+        <div class="logo-container">
+            <h1 class="logo-text">TRUST <span class="highlight">GHANA</span></h1>
+            <p class="tagline">Ghana's Trusted Marketplace</p>
+        </div>
+        <div class="search-bar">
+            <input type="text" id="searchInput" placeholder="Search products (e.g., phones, shoes)...">
+            <button id="searchBtn"><i class="fa fa-search"></i></button>
+        </div>
+        <div class="nav-actions">
+            <button id="authBtn" class="btn primary-btn"><i class="fa fa-user"></i> Account</button>
+            <button id="postItemBtn" class="btn secondary-btn"><i class="fa fa-plus-circle"></i> Sell Item</button>
+        </div>
+    </header>
+
+    <main>
+        <section class="categories">
+            <h2>Popular Categories</h2>
+            <div class="category-grid">
+                <div class="cat-card" data-category="Phones"><i class="fa fa-mobile-alt"></i> Phones & Tablets</div>
+                <div class="cat-card" data-category="Electronics"><i class="fa fa-tv"></i> Electronics</div>
+                <div class="cat-card" data-category="Fashion"><i class="fa fa-tshirt"></i> Fashion</div>
+                <div class="cat-card" data-category="Home"><i class="fa fa-home"></i> Home & Living</div>
+            </div>
+        </section>
+
+        <section class="products-section">
+            <h2>Explore Marketplace</h2>
+            <div id="productGrid" class="product-grid">
+                <p class="loading-text">Loading approved products...</p>
+            </div>
+        </section>
+    </main>
+
+    <div id="authModal" class="modal">
+        <div class="modal-content">
+            <span class="close" id="closeAuth">&times;</span>
+            <h2 id="authTitle">Login / Register</h2>
+            <form id="authForm">
+                <input type="email" id="authEmail" placeholder="Email Address" required>
+                <input type="password" id="authPassword" placeholder="Password" required>
+                <button type="submit" class="btn primary-btn full-width">Continue</button>
+            </form>
+            <p id="toggleAuthMode">Don't have an account? Register</p>
+        </div>
+    </div>
+
+    <div id="postModal" class="modal">
+        <div class="modal-content">
+            <span class="close" id="closePost">&times;</span>
+            <h2>Sell an Item</h2>
+            <form id="postForm">
+                <input type="text" id="itemName" placeholder="Product Name" required>
+                <select id="itemCategory" required>
+                    <option value="">Select Category</option>
+                    <option value="Phones">Phones & Tablets</option>
+                    <option value="Electronics">Electronics</option>
+                    <option value="Fashion">Fashion</option>
+                    <option value="Home">Home & Living</option>
+                </select>
+                <input type="number" id="itemPrice" placeholder="Price (GHS)" required>
+                <input type="text" id="itemImage" placeholder="Image URL (e.g., Imgur link)" required>
+                <textarea id="itemDesc" placeholder="Item description & condition..." required></textarea>
+                <input type="text" id="sellerContact" placeholder="WhatsApp Number (e.g., 0553688108)" required>
+                <button type="submit" class="btn primary-btn full-width">Submit for Admin Approval</button>
+            </form>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2026 Trust Ghana. All rights reserved. Buy, Sell, Grow.</p>
+    </footer>
+
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
