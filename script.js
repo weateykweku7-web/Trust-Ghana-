@@ -1,224 +1,143 @@
-:root {
-    --primary-green: #0b5d35;
-    --accent-red: #d93838;
-    --accent-gold: #f4b41a;
-    --bg-light: #f9f9f9;
-    --text-dark: #333333;
+// TODO: Replace with your actual Firebase project config credentials from your Firebase Console
+const firebaseConfig = {
+    apiKey: "YOUR_FIREBASE_API_KEY",
+    authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+    projectId: "YOUR_PROJECT_ID",
+    storageBucket: "YOUR_PROJECT_ID.appspot.com",
+    messagingSenderId: "YOUR_SENDER_ID",
+    appId: "YOUR_APP_ID"
+};
+
+// Initialize Firebase
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+const ADMIN_WHATSAPP = "233553688108"; // Format: Country code + phone without leading zero
+
+// DOM Elements
+const productGrid = document.getElementById('productGrid');
+const authModal = document.getElementById('authModal');
+const postModal = document.getElementById('postModal');
+const authBtn = document.getElementById('authBtn');
+const postItemBtn = document.getElementById('postItemBtn');
+const closeAuth = document.getElementById('closeAuth');
+const closePost = document.getElementById('closePost');
+const authForm = document.getElementById('authForm');
+const postForm = document.getElementById('postForm');
+
+// Modal Toggles
+authBtn.onclick = () => authModal.style.display = "block";
+postItemBtn.onclick = () => {
+    if (!auth.currentUser) {
+        alert("Please login first to post an item!");
+        authModal.style.display = "block";
+        return;
+    }
+    postModal.style.display = "block";
+};
+closeAuth.onclick = () => authModal.style.display = "none";
+closePost.onclick = () => postModal.style.display = "none";
+
+// Authentication State Listener
+auth.onAuthStateChanged(user => {
+    if (user) {
+        authBtn.innerHTML = `<i class="fa fa-user-check"></i> ${user.email.split('@')[0]}`;
+    } else {
+        authBtn.innerHTML = `<i class="fa fa-user"></i> Account`;
+    }
+});
+
+// Handle Email Authentication
+let isLoginMode = true;
+const toggleAuthMode = document.getElementById('toggleAuthMode');
+toggleAuthMode.onclick = () => {
+    isLoginMode = !isLoginMode;
+    document.getElementById('authTitle').innerText = isLoginMode ? "Login" : "Register";
+    toggleAuthMode.innerText = isLoginMode ? "Don't have an account? Register" : "Already have an account? Login";
+};
+
+authForm.onsubmit = async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('authEmail').value;
+    const password = document.getElementById('authPassword').value;
+    try {
+        if (isLoginMode) {
+            await auth.signInWithEmailAndPassword(email, password);
+            alert("Logged in successfully!");
+        } else {
+            await auth.createUserWithEmailAndPassword(email, password);
+            alert("Account created successfully!");
+        }
+        authModal.style.display = "none";
+    } catch (error) {
+        alert(error.message);
+    }
+};
+
+// Handle Product Submission (With Admin WhatsApp Notification Integration)
+postForm.onsubmit = async (e) => {
+    e.preventDefault();
+    const name = document.getElementById('itemName').value;
+    const category = document.getElementById('itemCategory').value;
+    const price = document.getElementById('itemPrice').value;
+    const image = document.getElementById('itemImage').value;
+    const description = document.getElementById('itemDesc').value;
+    const contact = document.getElementById('sellerContact').value;
+
+    try {
+        // Save product with 'approved: false' to enforce Admin Approval flow
+        await db.collection('products').add({
+            name,
+            category,
+            price: Number(price),
+            image,
+            description,
+            contact,
+            approved: false,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        postModal.style.display = "none";
+        postForm.reset();
+
+        // Trigger WhatsApp alert to Admin (You: 0553688108)
+        const msg = encodeURIComponent(`Hello Admin, a new product "${name}" (Price: GHS ${price}) has been posted on Trust Ghana and requires your approval.`);
+        window.open(`https://wa.me/${ADMIN_WHATSAPP}?text=${msg}`, '_blank');
+
+        alert("Item submitted successfully! It will appear in the marketplace once approved by the admin.");
+    } catch (error) {
+        alert("Error posting item: " + error.message);
+    }
+};
+
+// Fetch and Render Approved Products
+function loadProducts() {
+    db.collection('products').where('approved', '==', true).onSnapshot(snapshot => {
+        productGrid.innerHTML = "";
+        if (snapshot.empty) {
+            productGrid.innerHTML = "<p>No active products found at the moment.</p>";
+            return;
+        }
+        snapshot.forEach(doc => {
+            const p = doc.data();
+            const productCard = document.createElement('div');
+            productCard.className = 'product-card';
+            productCard.innerHTML = `
+                <img src="${p.image}" alt="${p.name}">
+                <div class="product-info">
+                    <span class="product-title">${p.name}</span>
+                    <span class="product-price">GHS ${p.price.toLocaleString()}</span>
+                    <p style="font-size:12px; color:#666;">${p.description.substring(0, 50)}...</p>
+                    <a class="whatsapp-buy-btn" href="https://wa.me/233${p.contact.replace(/^0/, '')}?text=Hello,%20I%20am%20interested%20in%20your%20item%20*${encodeURIComponent(p.name)}*%20listed%20on%20Trust%20Ghana%20for%20GHS%20${p.price}" target="_blank">
+                        <i class="fa-brands fa-whatsapp"></i> Chat Seller
+                    </a>
+                </div>
+            `;
+            productGrid.appendChild(productCard);
+        });
+    });
 }
 
-* {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-}
-
-body {
-    background-color: var(--bg-light);
-    color: var(--text-dark);
-}
-
-header {
-    background: #ffffff;
-    padding: 15px 30px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom: 3px solid var(--accent-gold);
-    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-}
-
-.logo-text {
-    color: var(--primary-green);
-    font-size: 24px;
-}
-
-.highlight {
-    color: var(--accent-red);
-}
-
-.tagline {
-    font-size: 11px;
-    color: #666;
-    letter-spacing: 1px;
-}
-
-.search-bar {
-    display: flex;
-    width: 40%;
-}
-
-.search-bar input {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 4px 0 0 4px;
-    outline: none;
-}
-
-.search-bar button {
-    background: var(--primary-green);
-    color: white;
-    border: none;
-    padding: 0 15px;
-    border-radius: 0 4px 4px 0;
-    cursor: pointer;
-}
-
-.nav-actions {
-    display: flex;
-    gap: 10px;
-}
-
-.btn {
-    padding: 8px 15px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-weight: 600;
-}
-
-.primary-btn {
-    background-color: var(--primary-green);
-    color: white;
-}
-
-.secondary-btn {
-    background-color: var(--accent-gold);
-    color: #000;
-}
-
-.full-width {
-    width: 100%;
-    margin-top: 10px;
-}
-
-main {
-    padding: 20px 40px;
-}
-
-.categories h2, .products-section h2 {
-    margin-bottom: 15px;
-    color: var(--primary-green);
-}
-
-.category-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 15px;
-    margin-bottom: 30px;
-}
-
-.cat-card {
-    background: white;
-    padding: 20px;
-    text-align: center;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    cursor: pointer;
-    transition: transform 0.2s;
-}
-
-.cat-card:hover {
-    transform: translateY(-3px);
-    background: var(--primary-green);
-    color: white;
-}
-
-.product-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 20px;
-}
-
-.product-card {
-    background: white;
-    border-radius: 8px;
-    overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-    display: flex;
-    flex-direction: column;
-}
-
-.product-card img {
-    width: 100%;
-    height: 160px;
-    object-fit: cover;
-}
-
-.product-info {
-    padding: 15px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    flex-grow: 1;
-}
-
-.product-title {
-    font-size: 16px;
-    font-weight: bold;
-}
-
-.product-price {
-    color: var(--accent-red);
-    font-weight: bold;
-    font-size: 18px;
-}
-
-.whatsapp-buy-btn {
-    background-color: #25d366;
-    color: white;
-    text-align: center;
-    text-decoration: none;
-    padding: 8px;
-    border-radius: 4px;
-    font-weight: bold;
-    margin-top: auto;
-}
-
-/* Modals */
-.modal {
-    display: none;
-    position: fixed;
-    z-index: 1000;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0,0,0,0.5);
-}
-
-.modal-content {
-    background-color: white;
-    margin: 10% auto;
-    padding: 25px;
-    border-radius: 8px;
-    width: 90%;
-    max-width: 400px;
-    position: relative;
-}
-
-.close {
-    position: absolute;
-    right: 15px;
-    top: 10px;
-    font-size: 24px;
-    cursor: pointer;
-}
-
-.modal-content input, .modal-content select, .modal-content textarea {
-    width: 100%;
-    padding: 10px;
-    margin-top: 10px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-}
-
-footer {
-    text-align: center;
-    padding: 20px;
-    background: #fff;
-    margin-top: 40px;
-    border-top: 1px solid #ddd;
-    font-size: 13px;
-}
+// Initial Call
+loadProducts();
